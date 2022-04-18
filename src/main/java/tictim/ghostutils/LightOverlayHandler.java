@@ -8,6 +8,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.material.Material;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.renderer.IRenderTypeBuffer;
 import net.minecraft.client.renderer.Matrix4f;
 import net.minecraft.client.settings.KeyBinding;
@@ -72,6 +73,7 @@ public final class LightOverlayHandler{
 	public static void onTick(RenderWorldLastEvent event){
 		if(!lightOverlayEnabled) return;
 		Entity entity = Minecraft.getInstance().getRenderViewEntity();
+		if(entity==null) return;
 		RenderSystem.disableTexture();
 		RenderSystem.disableLighting();
 		GL11.glLineWidth(1.5f);
@@ -158,17 +160,18 @@ public final class LightOverlayHandler{
 
 	/* @see Minecraft#rightClickMouse */
 	private static void renderLightingPredicate(World world, MatrixStack stack, IRenderTypeBuffer.Impl buffers){
-		Minecraft mc = Minecraft.getInstance();
-		if(!mc.player.isRowingBoat()&&mc.objectMouseOver!=null){
-			RayTraceResult _t = mc.objectMouseOver;
+		ClientPlayerEntity player = Minecraft.getInstance().player;
+		if(player==null) return;
+		if(!player.isRowingBoat()&&Minecraft.getInstance().objectMouseOver!=null){
+			RayTraceResult _t = Minecraft.getInstance().objectMouseOver;
 			if(_t instanceof BlockRayTraceResult){
 				BlockRayTraceResult trace = (BlockRayTraceResult)_t;
 				if(trace.getType()==RayTraceResult.Type.BLOCK){
 					BlockState blockState = world.getBlockState(trace.getPos());
 					if(blockState.getMaterial()!=Material.AIR){// TODO BlockItemUseContext
 						LightValueEstimate light = LightValueEstimate.getBrighter(
-								getEstimatedLightValue(mc.player, Hand.MAIN_HAND, trace),
-								getEstimatedLightValue(mc.player, Hand.OFF_HAND, trace));
+								getEstimatedLightValue(player, Hand.MAIN_HAND, trace),
+								getEstimatedLightValue(player, Hand.OFF_HAND, trace));
 						if(light!=null){
 							List<BlockPos> list = blockFinder.reset(world, light.ctx.getPos(), light.brightness).run();
 
@@ -199,6 +202,7 @@ public final class LightOverlayHandler{
 		if(stack.isEmpty()||!(stack.getItem() instanceof BlockItem)) return null;
 		BlockItem item = (BlockItem)stack.getItem();
 		Block b = item.getBlock();
+		//noinspection ConstantConditions
 		if(b!=null){
 			BlockItemUseContext ctx = new BlockItemUseContext(new ItemUseContext(player, hand, rayTraceResult));
 			if(ctx.canPlace()){

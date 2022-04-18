@@ -25,7 +25,7 @@ public class GhostUtils{
 	}
 
 	@Mod.EventBusSubscriber(modid = MODID, bus = Bus.MOD, value = Dist.CLIENT)
-	public static final class ClientHandler {
+	public static final class ClientHandler{
 		private ClientHandler(){}
 
 		private static KeyBinding toggleF7;
