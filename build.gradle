@@ -1,0 +1,120 @@
+buildscript {
+    repositories {
+        maven { url = 'https://files.minecraftforge.net/maven' }
+        jcenter()
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '3.+', changing: true
+    }
+}
+apply plugin: 'net.minecraftforge.gradle'
+// Only edit below this line, the above code adds and enables the necessary things for Forge to be setup.
+apply plugin: 'eclipse'
+apply plugin: 'maven-publish'
+
+version = "${mod_version}"
+group = "tictim.${mod_id}"
+archivesBaseName = "${mod_name}-${mc_version}"
+
+sourceCompatibility = targetCompatibility = compileJava.sourceCompatibility = compileJava.targetCompatibility = '1.8' // Need this here so eclipse task generates correctly.
+//Print out JVM information so that we know what version is running. Extreamly useful for people to know when helping you.
+println('Java: ' + System.getProperty('java.version') + ' JVM: ' + System.getProperty('java.vm.version') + '(' + System.getProperty('java.vendor') + ') Arch: ' + System.getProperty('os.arch'))
+
+minecraft {
+	mappings channel: 'snapshot', version: "${mappings_version}"
+    // makeObfSourceJar = false // an Srg named sources jar is made by default. uncomment this to disable.
+    
+    // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
+
+    // Default run configurations.
+    // These can be tweaked, removed, or duplicated as needed.
+    runs {
+        client {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                ghostutils {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        server {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            mods {
+                ghostutils {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        data {
+            workingDirectory project.file('run')
+
+            // Recommended logging data for a userdev environment
+            property 'forge.logging.markers', 'SCAN,REGISTRIES,REGISTRYDUMP'
+
+            // Recommended logging level for the console
+            property 'forge.logging.console.level', 'debug'
+
+            args '--mod', 'ghostutils', '--all', '--output', file('src/generated/resources/')
+
+            mods {
+                ghostutils {
+                    source sourceSets.main
+                }
+            }
+        }
+    }
+}
+
+repositories {
+	maven {
+		// location of the maven that hosts JEI files
+		name = "Progwml6 maven"
+		url = "https://dvs1.progwml6.com/files/maven/"
+	}
+	maven {
+		// location of a maven mirror for JEI files, as a fallback
+		name = "ModMaven"
+		url = "https://modmaven.k-4u.nl"
+	}
+}
+
+dependencies {
+	minecraft "net.minecraftforge:forge:${mc_version}-${forge_version}"
+
+	compileOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}:api")
+	runtimeOnly fg.deobf("mezz.jei:jei-${mc_version}:${jei_version}")
+}
+
+jar {
+	manifest {
+		attributes([
+				"Specification-Title"     : project.name,
+				"Specification-Vendor"    : "Tictim",
+				"Specification-Version"   : "${version}",
+				"Implementation-Title"    : "tictim.${mod_id}",
+				"Implementation-Vendor"   : "Tictim",
+				"Implementation-Version"  : "${version}",
+				"Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+		])
+	}
+}
+// Example configuration to allow publishing using the maven-publish task
+// This is the preferred method to reobfuscate your jar file
+jar.finalizedBy('reobfJar')
