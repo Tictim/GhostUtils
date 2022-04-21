@@ -1,6 +1,6 @@
 package tictim.ghostutils;
 
-import static net.minecraft.util.text.TextFormatting.RESET;
+import static net.minecraft.ChatFormatting.RESET;
 
 public final class TextWriter{
 	private final StringBuilder stb = new StringBuilder();

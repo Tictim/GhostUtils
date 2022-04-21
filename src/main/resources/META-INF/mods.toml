@@ -6,14 +6,14 @@
 # The name of the mod loader type to load - for regular FML @Mod mods it should be javafml
 modLoader="javafml" #mandatory
 # A version range to match for said mod loader - for regular FML @Mod it will be the forge version
-loaderVersion="[31,)" #mandatory This is typically bumped every Minecraft version by Forge. See our download page for lists of versions.
+loaderVersion="[40,)" #mandatory This is typically bumped every Minecraft version by Forge. See our download page for lists of versions.
 # A list of mods - how many allowed here is determined by the individual mod loader
 [[mods]] #mandatory
 modId="ghostutils"
 version="${file.jarVersion}"
 displayName="Ghost Utilities"
 displayURL="https://www.curseforge.com/minecraft/mc-mods/ghostutilities"
-logoFile="examplemod.png"
+logoFile="ghostutils_logo.png"
 description='''
 '''
 # A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
@@ -23,7 +23,7 @@ description='''
     # Does this dependency have to exist - if not, ordering below must be specified
     mandatory=true #mandatory
     # The version range of the dependency
-    versionRange="[31,)" #mandatory
+    versionRange="[40,)" #mandatory
     # An ordering relationship for the dependency - BEFORE or AFTER required if the relationship is not mandatory
     ordering="NONE"
     # Side this dependency is applied on - BOTH, CLIENT or SERVER
@@ -32,6 +32,6 @@ description='''
 [[dependencies.ghostutils]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.15.2]"
+    versionRange="[1.18.2]"
     ordering="NONE"
     side="BOTH"

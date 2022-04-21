@@ -1,156 +1,148 @@
 package tictim.ghostutils;
 
+import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
-import net.minecraft.block.Block;
-import net.minecraft.client.MainWindow;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.gui.screen.inventory.ContainerScreen;
-import net.minecraft.client.renderer.RenderHelper;
-import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.client.util.InputMappings;
-import net.minecraft.inventory.container.Slot;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.ByteArrayNBT;
-import net.minecraft.nbt.ByteNBT;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.nbt.INBT;
-import net.minecraft.nbt.IntArrayNBT;
-import net.minecraft.nbt.ListNBT;
-import net.minecraft.nbt.LongArrayNBT;
-import net.minecraft.nbt.StringNBT;
-import net.minecraft.tags.BlockTags;
-import net.minecraft.tags.ItemTags;
-import net.minecraft.tags.Tag;
-import net.minecraft.tags.TagCollection;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.nbt.ByteArrayTag;
+import net.minecraft.nbt.ByteTag;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.IntArrayTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.LongArrayTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.Slot;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.GuiScreenEvent;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderTooltipEvent;
-import net.minecraftforge.common.util.Constants.NBT;
+import net.minecraftforge.client.event.ScreenEvent;
+import net.minecraftforge.client.gui.GuiUtils;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.client.gui.GuiUtils;
 import net.minecraftforge.fml.common.Mod;
-import org.lwjgl.opengl.GL11;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.tags.ITag;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-import static net.minecraft.util.text.TextFormatting.*;
-import static tictim.ghostutils.GhostUtils.MODID;
+import static net.minecraft.ChatFormatting.*;
 
-@Mod.EventBusSubscriber(modid = MODID, value = Dist.CLIENT)
+@OnlyIn(Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = GhostUtils.MODID)
 public final class ItemInfoHandler{
 	private ItemInfoHandler(){}
-
-	private static FontRenderer fontRenderer;
-
-	static void init(){
-		fontRenderer = Minecraft.getInstance().getFontResourceManager().getFontRenderer(new ResourceLocation(MODID, "nonunicode"));
-	}
 
 	private static ItemStack stackUsedForTooltip = ItemStack.EMPTY;
 	private static boolean itemInfoEnabled;
 
 	@SubscribeEvent
-	public static void onTick(TickEvent.ClientTickEvent event){
-		if(event.phase==TickEvent.Phase.START){
+	public static void onTick(TickEvent.ClientTickEvent e){
+		if(e.phase==TickEvent.Phase.START){
 			if(Cfg.enableItemInfo()){
-				KeyBinding key = GhostUtils.ClientHandler.getToggleItemInfo();
-				if(key.getKeyConflictContext().isActive()&&key.isPressed()) itemInfoEnabled = !itemInfoEnabled;
+				KeyMapping key = GhostUtils.ClientHandler.getToggleItemInfo();
+				if(key.getKeyConflictContext().isActive()&&key.consumeClick()) {
+					itemInfoEnabled = !itemInfoEnabled;
+				}
 			}else itemInfoEnabled = false;
 		}
 	}
 
 	@SubscribeEvent
-	public static void onDrawTooltip(RenderTooltipEvent.PostText event){
-		if(itemInfoEnabled) stackUsedForTooltip = event.getStack();
+	public static void onDrawTooltip(RenderTooltipEvent.GatherComponents event){
+		if(itemInfoEnabled) stackUsedForTooltip = event.getItemStack();
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public static void guiRender(GuiScreenEvent.DrawScreenEvent.Post event){
-		if(!itemInfoEnabled||!(event.getGui() instanceof ContainerScreen<?>)) return;
-		ContainerScreen<?> gui = (ContainerScreen<?>)event.getGui();
-
+	public static void guiRender(ScreenEvent.DrawScreenEvent.Post event){
+		if(!itemInfoEnabled||!(event.getScreen() instanceof AbstractContainerScreen gui)) {
+			return;
+		}
+		PoseStack poseStack = event.getPoseStack();
 		if(debugMode()){
 			TextWriter text = new TextWriter();
 			nbtToText(text, getDebugNbt());
-			draw(gui, text.toString(), event.getMouseY());
+			draw(poseStack, gui, text.toString(), event.getMouseY());
 		}else if(gui.getMinecraft().player!=null){
-			ItemStack stack = gui.getMinecraft().player.inventory.getItemStack();
+			ItemStack stack = gui.getMenu().getCarried();
 			if(stack.isEmpty()){
 				Slot slotSelected = gui.getSlotUnderMouse();
-				if(slotSelected!=null) stack = slotSelected.getStack();
+				if(slotSelected!=null) stack = slotSelected.getItem();
 				else if(!stackUsedForTooltip.isEmpty()) stack = stackUsedForTooltip;
-
-				if(!stack.isEmpty()) draw(gui, getString(stack), 0);
-			}else draw(gui, getString(stack), event.getMouseY());
+				if(!stack.isEmpty()) draw(poseStack, gui, getString(stack), 0);
+			}else draw(poseStack, gui, getString(stack), event.getMouseY());
 		}
 		stackUsedForTooltip = ItemStack.EMPTY;
 	}
 
-	private static void draw(ContainerScreen<?> gui, String text, int scroll){
-		Minecraft mc = Minecraft.getInstance();
-		RenderSystem.disableRescaleNormal();
-		RenderHelper.disableStandardItemLighting();
-		RenderSystem.disableLighting();
-		RenderSystem.disableDepthTest();
-		RenderSystem.pushMatrix();
+	private static void draw(PoseStack poseStack, AbstractContainerScreen gui, String text, int scroll){
 
-		MainWindow window = mc.getMainWindow();
-		double mag = InputMappings.isKeyDown(window.getHandle(), mc.gameSettings.keyBindSneak.getKey().getKeyCode()) ?
+		Font fontRenderer = gui.getMinecraft().font;
+		RenderSystem.disableDepthTest();
+		RenderSystem.disableBlend();
+		poseStack.pushPose();
+		Minecraft mc = Minecraft.getInstance();
+		Window window = mc.getWindow();
+
+		poseStack.translate(0, 0, 1);
+		double mag = InputConstants.isKeyDown(window.getWindow(), mc.options.keyShift.getKey().getValue()) ?
 				Cfg.itemInfoZoomInSneak() :
 				Cfg.itemInfoZoom();
-		RenderSystem.scaled((double)window.getScaledWidth()/window.getWidth()*mag, (double)window.getScaledHeight()/window.getHeight()*mag, 1);
-		RenderSystem.color4f(1, 1, 1, 1);
-
-		List<String> list = Minecraft.getInstance().fontRenderer.listFormattedStringToWidth(text, window.getWidth()/3);
-		GL11.glTranslated(0, fontRenderer.FONT_HEIGHT-maxScroll(window, list.size(), mag)*scroll/(double)gui.height, 0);
+		poseStack.scale((float)((double)window.getGuiScaledWidth()/window.getWidth()*mag), (float)((double)window.getGuiScaledHeight()/window.getHeight()*mag), 1);
+		RenderSystem.setShaderColor(1, 1, 1, 1);
+		List<String> list = Arrays.stream(text.split("\n")).toList();
+		poseStack.translate(0, fontRenderer.lineHeight-maxScroll(window, fontRenderer, list.size(), mag)*scroll/(double)gui.height, 400);
 
 		int width = 0;
-		for(String s : list) if(!s.isEmpty()) width = Math.max(width, fontRenderer.getStringWidth(s));
-		GuiUtils.drawGradientRect(0, 0, 2, 4+width, 2+(list.size()+1)*fontRenderer.FONT_HEIGHT, 0x80000000, 0x80000000);
+		for(String s : list) if(!s.isEmpty()) width = Math.max(width, fontRenderer.width(s));
+		GuiUtils.drawGradientRect(poseStack.last().pose(), 0, 0, 2, 4+width, 2+(list.size()+1)*fontRenderer.lineHeight, 0x80000000, 0x80000000);
 
-		for(int i = 0; i<list.size(); i++) fontRenderer.drawStringWithShadow(list.get(i), 2, 2+i*fontRenderer.FONT_HEIGHT, -1);
+		for(int i = 0; i<list.size(); i++){
+			fontRenderer.draw(poseStack, list.get(i), 2, 2+i*fontRenderer.lineHeight, -1);
+		}
 
-		RenderSystem.enableRescaleNormal();
-		RenderSystem.popMatrix();
-		RenderSystem.enableLighting();
+		poseStack.popPose();
 		RenderSystem.enableDepthTest();
-		RenderHelper.enableStandardItemLighting();
+		RenderSystem.enableBlend();
 	}
 
-	private static int maxScroll(MainWindow window, int lines, double mag){
-		return Math.max(0, (lines+2)*fontRenderer.FONT_HEIGHT-(int)((double)window.getHeight()/mag));
+	private static int maxScroll(Window window, Font font, int lines, double mag){
+		return Math.max(0, (lines+2)*font.lineHeight-(int)((double)window.getHeight()/mag));
 	}
 
 	private static ItemStack latestStack;
 	private static String latestText;
 
 	private static String getString(ItemStack stack){
-		//noinspection PointlessNullCheck
-		if(latestStack==null||!ItemStack.areItemStacksEqual(stack, latestStack)){
+		if(latestStack==null||!ItemStack.isSame(stack, latestStack)){
 			latestStack = stack.copy();
 			Item item = stack.getItem();
 
 			TextWriter text = new TextWriter();
 
 			// Item name and its stack size
-			text.write(GOLD).write(stack.getCount()).rst().write(" x ").write(stack.getDisplayName().getFormattedText());
+			text.write(GOLD).write(stack.getCount()).rst().write(" x ").write(stack.getHoverName().getString());
 			// Item/Block ID
 			text.nl().write(GRAY).write("Item ID: ").write(item.getRegistryName()).rst();
 			if(item instanceof BlockItem)
 				text.nl().write(GRAY).write("Block ID: ").write(((BlockItem)item).getBlock().getRegistryName()).rst();
 
-			if(stack.isDamageable()){
-				int maxDamage = stack.getMaxDamage(), damage = stack.getDamage();
+			if(stack.isDamageableItem()){
+				int maxDamage = stack.getMaxDamage(), damage = stack.getDamageValue();
 				double percentage = (double)(maxDamage-damage)/maxDamage;
 				text.nl().nl().write(percentage>=.5 ? GREEN :
 								percentage>=.25 ? YELLOW : percentage>=.125 ? GOLD : RED)
@@ -160,20 +152,26 @@ public final class ItemInfoHandler{
 						.write(GOLD).write(percentage<0.01 ? "<1%" : (int)(percentage*100)+"%").rst()
 						.write(")");
 			}
-
-			List<Tag<Item>> itemTags = tags(ItemTags.getCollection(), item);
+			List<ITag<Item>> itemTags = Objects.requireNonNull(ForgeRegistries.ITEMS.tags())
+					.stream()
+					.filter(t -> t.contains(item))
+					.collect(Collectors.toList());
 			if(!itemTags.isEmpty()){
 				text.nl().nl().write(YELLOW).write(BOLD).write("Item Tags:").rst();
-				for(Tag<Item> tag : itemTags) text.nl().write(" - ").write(tag.getId());
+				for(ITag<Item> tag : itemTags) text.nl().write(" - ").write(tag.getKey().location());
 			}
 			if(item instanceof BlockItem){
-				List<Tag<Block>> blockTags = tags(BlockTags.getCollection(), ((BlockItem)item).getBlock());
+
+				List<ITag<Block>> blockTags = Objects.requireNonNull(ForgeRegistries.BLOCKS.tags())
+						.stream()
+						.filter(t -> t.contains(((BlockItem)item).getBlock()))
+						.collect(Collectors.toList());
 				if(!blockTags.isEmpty()){
 					text.nl().write(YELLOW).write(BOLD).write("Block Tags:").rst();
-					for(Tag<Block> tag : blockTags) text.nl().write(" - ").write(tag.getId());
+					for(ITag<Block> tag : blockTags) text.nl().write(" - ").write(tag.getKey().location());
 				}
 			}
-			CompoundNBT nbt = stack.getTag();
+			CompoundTag nbt = stack.getTag();
 			if(nbt!=null){
 				text.nl().nl().write(GREEN).write(BOLD).write("NBT: ").rst();
 				nbtToText(text, nbt);
@@ -183,40 +181,19 @@ public final class ItemInfoHandler{
 		return latestText;
 	}
 
-	private static <T> List<Tag<T>> tags(TagCollection<T> tags, T t){
-		List<Tag<T>> returns = null;
-		for(Tag<T> tag : tags.getTagMap().values()){
-			if(tag.contains(t)){
-				if(returns==null) returns = new ArrayList<>();
-				returns.add(tag);
-			}
-		}
-		return returns!=null ? returns : Collections.emptyList();
-	}
-
-	private static void nbtToText(TextWriter text, INBT nbt){
+	private static void nbtToText(TextWriter text, Tag nbt){
 		switch(nbt.getId()){
-			case NBT.TAG_END:
-				text.write(DARK_GRAY).write("(END)").rst();
-				return;
-			case NBT.TAG_BYTE:
-				text.write(((ByteNBT)nbt).getByte()!=0 ? GREEN : RED).write(nbt.toString()).rst();
-				return;
-			case NBT.TAG_SHORT:
-			case NBT.TAG_INT:
-			case NBT.TAG_LONG:
-			case NBT.TAG_FLOAT:
-			case NBT.TAG_DOUBLE:
-				text.write(GOLD).write(nbt.toString()).rst();
-				return;
-			case NBT.TAG_BYTE_ARRAY:{
-				if(((ByteArrayNBT)nbt).isEmpty()){
+			case Tag.TAG_END -> text.write(DARK_GRAY).write("(END)").rst();
+			case Tag.TAG_BYTE -> text.write(((ByteTag)nbt).getAsByte()!=0 ? GREEN : RED).write(nbt.toString()).rst();
+			case Tag.TAG_SHORT, Tag.TAG_INT, Tag.TAG_LONG, Tag.TAG_FLOAT, Tag.TAG_DOUBLE -> text.write(GOLD).write(nbt.toString()).rst();
+			case Tag.TAG_BYTE_ARRAY -> {
+				if(((ByteArrayTag)nbt).isEmpty()){
 					text.write("[B; ]");
 					return;
 				}
 				text.write("[B;").tab();
 				boolean first = true;
-				for(byte b : ((ByteArrayNBT)nbt).getByteArray()){
+				for(byte b : ((ByteArrayTag)nbt).getAsByteArray()){
 					if(first){
 						first = false;
 						text.nl();
@@ -224,11 +201,10 @@ public final class ItemInfoHandler{
 					text.write(b!=0 ? GREEN : RED).write(b).rst();
 				}
 				text.untab().writeAtNewLine("]");
-				return;
 			}
-			case NBT.TAG_STRING:{
-				String str = nbt.getString();
-				ResourceLocation rl = ResourceLocation.tryCreate(str);
+			case Tag.TAG_STRING -> {
+				String str = nbt.getAsString();
+				ResourceLocation rl = ResourceLocation.tryParse(str);
 				if(rl!=null){
 					text.write(GREEN).write('"')
 							.write(YELLOW).write(rl.getNamespace())
@@ -238,39 +214,37 @@ public final class ItemInfoHandler{
 				}else{
 					text.write(GREEN).write('"').write(str).write('"').rst();
 				}
-				return;
 			}
-			case NBT.TAG_LIST:
-				if(((ListNBT)nbt).isEmpty()){
+			case Tag.TAG_LIST -> {
+				if(((ListTag)nbt).isEmpty()){
 					text.write("[NBT; ]");
 					return;
 				}
 				text.write("[NBT;").tab();
-				for(INBT nbt2 : (ListNBT)nbt) nbtToText(text.nl(), nbt2);
+				for(Tag nbt2 : (ListTag)nbt) nbtToText(text.nl(), nbt2);
 				text.untab().writeAtNewLine("]");
-				return;
-			case NBT.TAG_COMPOUND:{
-				CompoundNBT compound = (CompoundNBT)nbt;
+			}
+			case Tag.TAG_COMPOUND -> {
+				CompoundTag compound = (CompoundTag)nbt;
 				if(compound.isEmpty()){
 					text.write("{ }");
 					return;
 				}
 				text.write("{").tab();
-				compound.keySet().stream().sorted().forEachOrdered(key -> {
+				compound.getAllKeys().stream().sorted().forEachOrdered(key -> {
 					text.writeAtNewLine(YELLOW).write(key).rst().write(": ");
 					nbtToText(text, Objects.requireNonNull(compound.get(key)));
 				});
 				text.untab().writeAtNewLine("}");
-				return;
 			}
-			case NBT.TAG_INT_ARRAY:{
-				if(((IntArrayNBT)nbt).isEmpty()){
+			case Tag.TAG_INT_ARRAY -> {
+				if(((IntArrayTag)nbt).isEmpty()){
 					text.write("[I; ]");
 					return;
 				}
 				text.write("[I;").tab();
 				boolean first = true;
-				for(int i : ((IntArrayNBT)nbt).getIntArray()){
+				for(int i : ((IntArrayTag)nbt).getAsIntArray()){
 					if(first){
 						first = false;
 						text.nl();
@@ -278,16 +252,15 @@ public final class ItemInfoHandler{
 					text.write(GOLD).write(i).rst();
 				}
 				text.untab().writeAtNewLine("]");
-				return;
 			}
-			case NBT.TAG_LONG_ARRAY:
-				if(((LongArrayNBT)nbt).isEmpty()){
+			case Tag.TAG_LONG_ARRAY -> {
+				if(((LongArrayTag)nbt).isEmpty()){
 					text.write("[L; ]");
 					return;
 				}
 				text.write("[L;").tab();
 				boolean first = true;
-				for(long l : ((LongArrayNBT)nbt).getAsLongArray()){
+				for(long l : ((LongArrayTag)nbt).getAsLongArray()){
 					if(first){
 						first = false;
 						text.nl();
@@ -295,9 +268,8 @@ public final class ItemInfoHandler{
 					text.write(GOLD).write(l).rst();
 				}
 				text.untab().writeAtNewLine("]");
-				return;
-			default:
-				text.write("(Unknown NBT Data)");
+			}
+			default -> text.write("(Unknown NBT Data)");
 		}
 	}
 
@@ -305,11 +277,11 @@ public final class ItemInfoHandler{
 		return false;
 	}
 
-	private static CompoundNBT debugNbt;
+	private static CompoundTag debugNbt;
 
-	private static CompoundNBT getDebugNbt(){
+	private static CompoundTag getDebugNbt(){
 		if(debugNbt==null){
-			debugNbt = new CompoundNBT();
+			debugNbt = new CompoundTag();
 			debugNbt.putInt("IntValue", 420);
 			debugNbt.putBoolean("BoolValue", true);
 			debugNbt.putByte("ByteValue", (byte)127);
@@ -321,36 +293,36 @@ public final class ItemInfoHandler{
 			debugNbt.putIntArray("IntArrayValue", new int[]{0, 1, 2, 3, 4, 5});
 			debugNbt.putLongArray("LongArrayValue", new long[]{0, 1, 2, 3, 4, 5});
 			debugNbt.putString("StringValue", "Hello petty mortals");
-			ListNBT list = new ListNBT();
-			list.add(StringNBT.valueOf("List Element 1"));
-			list.add(StringNBT.valueOf("List Element 2"));
-			list.add(StringNBT.valueOf("List Element 3"));
+			ListTag list = new ListTag();
+			list.add(StringTag.valueOf("List Element 1"));
+			list.add(StringTag.valueOf("List Element 2"));
+			list.add(StringTag.valueOf("List Element 3"));
 			debugNbt.put("StringListValue", list);
-			ListNBT list2 = new ListNBT();
-			CompoundNBT nbt1 = new CompoundNBT();
+			ListTag list2 = new ListTag();
+			CompoundTag nbt1 = new CompoundTag();
 			nbt1.putInt("ListElementIndex", 0);
 			list2.add(nbt1);
-			CompoundNBT nbt2 = new CompoundNBT();
+			CompoundTag nbt2 = new CompoundTag();
 			nbt2.putInt("ListElementIndex", 1);
 			list2.add(nbt2);
-			CompoundNBT nbt3 = new CompoundNBT();
+			CompoundTag nbt3 = new CompoundTag();
 			nbt3.putInt("ListElementIndex", 2);
 			list2.add(nbt3);
 			debugNbt.put("CompoundListValue", list2);
-			debugNbt.putUniqueId("UUID", UUID.randomUUID());
-			CompoundNBT innerNBT = new CompoundNBT();
+			debugNbt.putUUID("UUID", UUID.randomUUID());
+			CompoundTag innerNBT = new CompoundTag();
 			innerNBT.putInt("InnerIntValue", 1000);
 			innerNBT.putString("InnerStringValue", "I am god of the universe");
-			ListNBT innerList = new ListNBT();
-			innerList.add(StringNBT.valueOf("List Element 1"));
-			innerList.add(StringNBT.valueOf("List Element 2"));
-			innerList.add(StringNBT.valueOf("List Element 3"));
+			ListTag innerList = new ListTag();
+			innerList.add(StringTag.valueOf("List Element 1"));
+			innerList.add(StringTag.valueOf("List Element 2"));
+			innerList.add(StringTag.valueOf("List Element 3"));
 			innerNBT.put("InnerListValue", innerList);
 			debugNbt.put("InnerNBT", innerNBT);
 			debugNbt.putByteArray("EmptyByteArrayValue", new byte[0]);
 			debugNbt.putIntArray("EmptyIntArrayValue", new int[0]);
 			debugNbt.putLongArray("EmptyLongArrayValue", new long[0]);
-			debugNbt.put("EmptyNBTArrayValue", new ListNBT());
+			debugNbt.put("EmptyNBTArrayValue", new ListTag());
 		}
 		return debugNbt;
 	}
