@@ -16,6 +16,8 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.LongArrayTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.inventory.Slot;
@@ -38,15 +40,17 @@ import net.minecraftforge.registries.IForgeRegistry;
 import net.minecraftforge.registries.tags.IReverseTag;
 import net.minecraftforge.registries.tags.ITagManager;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Stream;
 
 import static net.minecraft.ChatFormatting.*;
+import static tictim.ghostutils.GhostUtils.MODID;
 
 @OnlyIn(Dist.CLIENT)
-@Mod.EventBusSubscriber(modid = GhostUtils.MODID)
+@Mod.EventBusSubscriber(modid = MODID)
 public final class ItemInfoHandler{
 	private ItemInfoHandler(){}
 
@@ -93,29 +97,35 @@ public final class ItemInfoHandler{
 	}
 
 	private static void draw(PoseStack poseStack, AbstractContainerScreen<?> gui, String text, int scroll){
-		Font font = gui.getMinecraft().font;
+		Minecraft mc = Minecraft.getInstance();
+		Font font = mc.font;
+		Window window = mc.getWindow();
+
 		RenderSystem.disableDepthTest();
 		RenderSystem.disableBlend();
 		poseStack.pushPose();
-		Minecraft mc = Minecraft.getInstance();
-		Window window = mc.getWindow();
-
 		poseStack.translate(0, 0, 1);
 		double mag = InputConstants.isKeyDown(window.getWindow(), mc.options.keyShift.getKey().getValue()) ?
 				Cfg.itemInfoZoomInSneak() :
 				Cfg.itemInfoZoom();
 		poseStack.scale((float)((double)window.getGuiScaledWidth()/window.getWidth()*mag), (float)((double)window.getGuiScaledHeight()/window.getHeight()*mag), 1);
 		RenderSystem.setShaderColor(1, 1, 1, 1);
-		String[] list = text.split("\n");
-		poseStack.translate(0, font.lineHeight-maxScroll(window, font, list.length, mag)*scroll/(double)gui.height, 400);
+
+		boolean fu = mc.options.forceUnicodeFont;
+		if(fu) mc.selectMainFont(false);
+
+		List<FormattedText> list = font.getSplitter().splitLines(text, window.getWidth()/3, Style.EMPTY);
+		poseStack.translate(0, font.lineHeight-maxScroll(window, font, list.size(), mag)*scroll/(double)gui.height, 400);
 
 		int width = 0;
-		for(String s : list) if(!s.isEmpty()) width = Math.max(width, font.width(s));
-		GuiUtils.drawGradientRect(poseStack.last().pose(), 0, 0, 2, 4+width, 2+(list.length+1)*font.lineHeight, 0x80000000, 0x80000000);
+		for(FormattedText s : list) width = Math.max(width, font.width(s));
+		GuiUtils.drawGradientRect(poseStack.last().pose(), 0, 0, 2, 4+width, 2+(list.size()+1)*font.lineHeight, 0x80000000, 0x80000000);
 
-		for(int i = 0; i<list.length; i++){
-			font.draw(poseStack, list[i], 2, 2+i*font.lineHeight, -1);
+		for(int i = 0; i<list.size(); i++){
+			font.draw(poseStack, list.get(i).getString(), 2, 2+i*font.lineHeight, -1);
 		}
+
+		if(fu) mc.selectMainFont(true);
 
 		poseStack.popPose();
 		RenderSystem.enableDepthTest();
@@ -327,6 +337,8 @@ public final class ItemInfoHandler{
 			debugNbt.putIntArray("EmptyIntArrayValue", new int[0]);
 			debugNbt.putLongArray("EmptyLongArrayValue", new long[0]);
 			debugNbt.put("EmptyNBTArrayValue", new ListTag());
+			debugNbt.putString("ReallyReallyReallyReallyLongStringOfStringsAreReallyReallyReallyReallyLong",
+					"ReallyReallyReallyReallyLongStringOfStringsAreReallyReallyReallyReallyLong");
 		}
 		return debugNbt;
 	}
