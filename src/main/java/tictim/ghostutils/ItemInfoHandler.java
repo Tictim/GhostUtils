@@ -17,9 +17,9 @@ import net.minecraft.nbt.LongArrayTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.FormattedText;
-import net.minecraft.network.chat.Style;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -40,6 +40,7 @@ import net.minecraftforge.registries.IForgeRegistry;
 import net.minecraftforge.registries.tags.IReverseTag;
 import net.minecraftforge.registries.tags.ITagManager;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -81,9 +82,7 @@ public final class ItemInfoHandler{
 		}
 		PoseStack poseStack = event.getPoseStack();
 		if(debugMode()){
-			TextWriter text = new TextWriter();
-			nbtToText(text, getDebugNbt());
-			draw(poseStack, gui, text.toString(), event.getMouseY());
+			draw(poseStack, gui, getDebugText(), event.getMouseY());
 		}else if(gui.getMinecraft().player!=null){
 			ItemStack stack = gui.getMenu().getCarried();
 			if(stack.isEmpty()){
@@ -114,15 +113,15 @@ public final class ItemInfoHandler{
 		boolean fu = mc.options.forceUnicodeFont;
 		if(fu) mc.selectMainFont(false);
 
-		List<FormattedText> list = font.getSplitter().splitLines(text, window.getWidth()/3, Style.EMPTY);
-		poseStack.translate(0, font.lineHeight-maxScroll(window, font, list.size(), mag)*scroll/(double)gui.height, 400);
+		List<FormattedCharSequence> split = font.split(FormattedText.of(text), window.getWidth()/3);
+		poseStack.translate(0, font.lineHeight-maxScroll(window, font, split.size(), mag)*scroll/(double)gui.height, 400);
 
 		int width = 0;
-		for(FormattedText s : list) width = Math.max(width, font.width(s));
-		GuiUtils.drawGradientRect(poseStack.last().pose(), 0, 0, 2, 4+width, 2+(list.size()+1)*font.lineHeight, 0x80000000, 0x80000000);
+		for(FormattedCharSequence s : split) width = Math.max(width, font.width(s));
+		GuiUtils.drawGradientRect(poseStack.last().pose(), 0, 0, 2, 4+width, 2+(split.size()+1)*font.lineHeight, 0x80000000, 0x80000000);
 
-		for(int i = 0; i<list.size(); i++){
-			font.draw(poseStack, list.get(i).getString(), 2, 2+i*font.lineHeight, -1);
+		for(int i = 0; i<split.size(); i++){
+			font.draw(poseStack, split.get(i), 2, 2+i*font.lineHeight, -1);
 		}
 
 		if(fu) mc.selectMainFont(true);
@@ -165,16 +164,17 @@ public final class ItemInfoHandler{
 						.write(GOLD).write(percentage<0.01 ? "<1%" : (int)(percentage*100)+"%").rst()
 						.write(")");
 			}
-			TagKey<?>[] tags = fucks(ForgeRegistries.ITEMS, item).toArray(TagKey[]::new);
-			if(tags.length>0){
+			TagKey<?>[] itemTags = fucks(ForgeRegistries.ITEMS, item).toArray(TagKey[]::new);
+			if(itemTags.length>0){
 				text.nl().nl().write(YELLOW).write(BOLD).write("Item Tags:").rst();
-				for(TagKey<?> tag : tags) text.nl().write(" - ").write(tag.location());
+				for(TagKey<?> tag : itemTags) text.nl().write(" - ").write(tag.location());
 			}
 			if(block!=null){
-				tags = fucks(ForgeRegistries.BLOCKS, block).toArray(TagKey[]::new);
-				if(tags.length>0){
+				TagKey<?>[] blockTags = fucks(ForgeRegistries.BLOCKS, block).toArray(TagKey[]::new);
+				if(blockTags.length>0){
+					if(itemTags.length==0) text.nl();
 					text.nl().write(YELLOW).write(BOLD).write("Block Tags:").rst();
-					for(TagKey<?> tag : tags) text.nl().write(" - ").write(tag.location());
+					for(TagKey<?> tag : blockTags) text.nl().write(" - ").write(tag.location());
 				}
 			}
 			CompoundTag nbt = stack.getTag();
@@ -291,27 +291,27 @@ public final class ItemInfoHandler{
 		return false;
 	}
 
-	private static CompoundTag debugNbt;
+	@Nullable private static String debugText;
 
-	private static CompoundTag getDebugNbt(){
-		if(debugNbt==null){
-			debugNbt = new CompoundTag();
-			debugNbt.putInt("IntValue", 420);
-			debugNbt.putBoolean("BoolValue", true);
-			debugNbt.putByte("ByteValue", (byte)127);
-			debugNbt.putShort("ShortValue", (short)6300);
-			debugNbt.putLong("LongValue", 12352346725L);
-			debugNbt.putFloat("FloatValue", 2.5f);
-			debugNbt.putDouble("DoubleValue", Math.PI);
-			debugNbt.putByteArray("ByteArrayValue", new byte[]{0, 1, 2, 3, 4, 5});
-			debugNbt.putIntArray("IntArrayValue", new int[]{0, 1, 2, 3, 4, 5});
-			debugNbt.putLongArray("LongArrayValue", new long[]{0, 1, 2, 3, 4, 5});
-			debugNbt.putString("StringValue", "Hello petty mortals");
+	private static String getDebugText(){
+		if(debugText==null){
+			CompoundTag tag = new CompoundTag();
+			tag.putInt("IntValue", 420);
+			tag.putBoolean("BoolValue", true);
+			tag.putByte("ByteValue", (byte)127);
+			tag.putShort("ShortValue", (short)6300);
+			tag.putLong("LongValue", 12352346725L);
+			tag.putFloat("FloatValue", 2.5f);
+			tag.putDouble("DoubleValue", Math.PI);
+			tag.putByteArray("ByteArrayValue", new byte[]{0, 1, 2, 3, 4, 5});
+			tag.putIntArray("IntArrayValue", new int[]{0, 1, 2, 3, 4, 5});
+			tag.putLongArray("LongArrayValue", new long[]{0, 1, 2, 3, 4, 5});
+			tag.putString("StringValue", "Hello petty mortals");
 			ListTag list = new ListTag();
 			list.add(StringTag.valueOf("List Element 1"));
 			list.add(StringTag.valueOf("List Element 2"));
 			list.add(StringTag.valueOf("List Element 3"));
-			debugNbt.put("StringListValue", list);
+			tag.put("StringListValue", list);
 			ListTag list2 = new ListTag();
 			CompoundTag nbt1 = new CompoundTag();
 			nbt1.putInt("ListElementIndex", 0);
@@ -322,8 +322,8 @@ public final class ItemInfoHandler{
 			CompoundTag nbt3 = new CompoundTag();
 			nbt3.putInt("ListElementIndex", 2);
 			list2.add(nbt3);
-			debugNbt.put("CompoundListValue", list2);
-			debugNbt.putUUID("UUID", UUID.randomUUID());
+			tag.put("CompoundListValue", list2);
+			tag.putUUID("UUID", UUID.randomUUID());
 			CompoundTag innerNBT = new CompoundTag();
 			innerNBT.putInt("InnerIntValue", 1000);
 			innerNBT.putString("InnerStringValue", "I am god of the universe");
@@ -332,14 +332,18 @@ public final class ItemInfoHandler{
 			innerList.add(StringTag.valueOf("List Element 2"));
 			innerList.add(StringTag.valueOf("List Element 3"));
 			innerNBT.put("InnerListValue", innerList);
-			debugNbt.put("InnerNBT", innerNBT);
-			debugNbt.putByteArray("EmptyByteArrayValue", new byte[0]);
-			debugNbt.putIntArray("EmptyIntArrayValue", new int[0]);
-			debugNbt.putLongArray("EmptyLongArrayValue", new long[0]);
-			debugNbt.put("EmptyNBTArrayValue", new ListTag());
-			debugNbt.putString("ReallyReallyReallyReallyLongStringOfStringsAreReallyReallyReallyReallyLong",
+			tag.put("InnerNBT", innerNBT);
+			tag.putByteArray("EmptyByteArrayValue", new byte[0]);
+			tag.putIntArray("EmptyIntArrayValue", new int[0]);
+			tag.putLongArray("EmptyLongArrayValue", new long[0]);
+			tag.put("EmptyNBTArrayValue", new ListTag());
+			tag.putString("ReallyReallyReallyReallyLongStringOfStringsAreReallyReallyReallyReallyLong",
 					"ReallyReallyReallyReallyLongStringOfStringsAreReallyReallyReallyReallyLong");
+
+			TextWriter text = new TextWriter();
+			nbtToText(text, tag);
+			debugText = text.toString();
 		}
-		return debugNbt;
+		return debugText;
 	}
 }
