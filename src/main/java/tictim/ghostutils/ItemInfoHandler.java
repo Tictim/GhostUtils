@@ -17,6 +17,7 @@ import net.minecraft.nbt.LongArrayTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -32,13 +33,15 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.tags.ITag;
+import net.minecraftforge.registries.ForgeRegistryEntry;
+import net.minecraftforge.registries.IForgeRegistry;
+import net.minecraftforge.registries.tags.IReverseTag;
+import net.minecraftforge.registries.tags.ITagManager;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static net.minecraft.ChatFormatting.*;
 
@@ -55,7 +58,7 @@ public final class ItemInfoHandler{
 		if(e.phase==TickEvent.Phase.START){
 			if(Cfg.enableItemInfo()){
 				KeyMapping key = GhostUtils.ClientHandler.getToggleItemInfo();
-				if(key.getKeyConflictContext().isActive()&&key.consumeClick()) {
+				if(key.getKeyConflictContext().isActive()&&key.consumeClick()){
 					itemInfoEnabled = !itemInfoEnabled;
 				}
 			}else itemInfoEnabled = false;
@@ -69,7 +72,7 @@ public final class ItemInfoHandler{
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
 	public static void guiRender(ScreenEvent.DrawScreenEvent.Post event){
-		if(!itemInfoEnabled||!(event.getScreen() instanceof AbstractContainerScreen gui)) {
+		if(!itemInfoEnabled||!(event.getScreen() instanceof AbstractContainerScreen gui)){
 			return;
 		}
 		PoseStack poseStack = event.getPoseStack();
@@ -89,9 +92,8 @@ public final class ItemInfoHandler{
 		stackUsedForTooltip = ItemStack.EMPTY;
 	}
 
-	private static void draw(PoseStack poseStack, AbstractContainerScreen gui, String text, int scroll){
-
-		Font fontRenderer = gui.getMinecraft().font;
+	private static void draw(PoseStack poseStack, AbstractContainerScreen<?> gui, String text, int scroll){
+		Font font = gui.getMinecraft().font;
 		RenderSystem.disableDepthTest();
 		RenderSystem.disableBlend();
 		poseStack.pushPose();
@@ -104,15 +106,15 @@ public final class ItemInfoHandler{
 				Cfg.itemInfoZoom();
 		poseStack.scale((float)((double)window.getGuiScaledWidth()/window.getWidth()*mag), (float)((double)window.getGuiScaledHeight()/window.getHeight()*mag), 1);
 		RenderSystem.setShaderColor(1, 1, 1, 1);
-		List<String> list = Arrays.stream(text.split("\n")).toList();
-		poseStack.translate(0, fontRenderer.lineHeight-maxScroll(window, fontRenderer, list.size(), mag)*scroll/(double)gui.height, 400);
+		String[] list = text.split("\n");
+		poseStack.translate(0, font.lineHeight-maxScroll(window, font, list.length, mag)*scroll/(double)gui.height, 400);
 
 		int width = 0;
-		for(String s : list) if(!s.isEmpty()) width = Math.max(width, fontRenderer.width(s));
-		GuiUtils.drawGradientRect(poseStack.last().pose(), 0, 0, 2, 4+width, 2+(list.size()+1)*fontRenderer.lineHeight, 0x80000000, 0x80000000);
+		for(String s : list) if(!s.isEmpty()) width = Math.max(width, font.width(s));
+		GuiUtils.drawGradientRect(poseStack.last().pose(), 0, 0, 2, 4+width, 2+(list.length+1)*font.lineHeight, 0x80000000, 0x80000000);
 
-		for(int i = 0; i<list.size(); i++){
-			fontRenderer.draw(poseStack, list.get(i), 2, 2+i*fontRenderer.lineHeight, -1);
+		for(int i = 0; i<list.length; i++){
+			font.draw(poseStack, list[i], 2, 2+i*font.lineHeight, -1);
 		}
 
 		poseStack.popPose();
@@ -131,6 +133,7 @@ public final class ItemInfoHandler{
 		if(latestStack==null||!ItemStack.isSame(stack, latestStack)){
 			latestStack = stack.copy();
 			Item item = stack.getItem();
+			Block block = item instanceof BlockItem bi ? bi.getBlock() : null;
 
 			TextWriter text = new TextWriter();
 
@@ -138,8 +141,8 @@ public final class ItemInfoHandler{
 			text.write(GOLD).write(stack.getCount()).rst().write(" x ").write(stack.getHoverName().getString());
 			// Item/Block ID
 			text.nl().write(GRAY).write("Item ID: ").write(item.getRegistryName()).rst();
-			if(item instanceof BlockItem)
-				text.nl().write(GRAY).write("Block ID: ").write(((BlockItem)item).getBlock().getRegistryName()).rst();
+			if(block!=null)
+				text.nl().write(GRAY).write("Block ID: ").write(block.getRegistryName()).rst();
 
 			if(stack.isDamageableItem()){
 				int maxDamage = stack.getMaxDamage(), damage = stack.getDamageValue();
@@ -152,23 +155,16 @@ public final class ItemInfoHandler{
 						.write(GOLD).write(percentage<0.01 ? "<1%" : (int)(percentage*100)+"%").rst()
 						.write(")");
 			}
-			List<ITag<Item>> itemTags = Objects.requireNonNull(ForgeRegistries.ITEMS.tags())
-					.stream()
-					.filter(t -> t.contains(item))
-					.collect(Collectors.toList());
-			if(!itemTags.isEmpty()){
+			TagKey<?>[] tags = fucks(ForgeRegistries.ITEMS, item).toArray(TagKey[]::new);
+			if(tags.length>0){
 				text.nl().nl().write(YELLOW).write(BOLD).write("Item Tags:").rst();
-				for(ITag<Item> tag : itemTags) text.nl().write(" - ").write(tag.getKey().location());
+				for(TagKey<?> tag : tags) text.nl().write(" - ").write(tag.location());
 			}
-			if(item instanceof BlockItem){
-
-				List<ITag<Block>> blockTags = Objects.requireNonNull(ForgeRegistries.BLOCKS.tags())
-						.stream()
-						.filter(t -> t.contains(((BlockItem)item).getBlock()))
-						.collect(Collectors.toList());
-				if(!blockTags.isEmpty()){
+			if(block!=null){
+				tags = fucks(ForgeRegistries.BLOCKS, block).toArray(TagKey[]::new);
+				if(tags.length>0){
 					text.nl().write(YELLOW).write(BOLD).write("Block Tags:").rst();
-					for(ITag<Block> tag : blockTags) text.nl().write(" - ").write(tag.getKey().location());
+					for(TagKey<?> tag : tags) text.nl().write(" - ").write(tag.location());
 				}
 			}
 			CompoundTag nbt = stack.getTag();
@@ -179,6 +175,14 @@ public final class ItemInfoHandler{
 			latestText = text.toString();
 		}
 		return latestText;
+	}
+
+	private static <T extends ForgeRegistryEntry<T>> Stream<TagKey<T>> fucks(IForgeRegistry<T> registry, T entry){
+		ITagManager<T> tags = registry.tags();
+		if(tags==null) return Stream.empty();
+		Optional<IReverseTag<T>> reverseTag = tags.getReverseTag(entry);
+		if(!reverseTag.isPresent()) return Stream.empty();
+		return reverseTag.get().getTagKeys();
 	}
 
 	private static void nbtToText(TextWriter text, Tag nbt){

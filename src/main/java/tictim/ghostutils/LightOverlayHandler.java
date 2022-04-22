@@ -85,7 +85,6 @@ public final class LightOverlayHandler{
 		RenderSystem.disableTexture();
 		GL11.glLineWidth(1.5f);
 
-		//Vector3d projectedView = Minecraft.getInstance().gameRenderer.getActiveRenderInfo().getProjectedView();
 		Vec3 projectedView = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
 		MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
 		PoseStack poseStack = event.getPoseStack();
@@ -169,8 +168,7 @@ public final class LightOverlayHandler{
 		if(player==null) return;
 		if(!player.isVehicle()&&Minecraft.getInstance().hitResult!=null){//isboat?
 			HitResult _t = Minecraft.getInstance().hitResult;
-			if(_t instanceof BlockHitResult){
-				BlockHitResult trace = (BlockHitResult)_t;
+			if(_t instanceof BlockHitResult trace){
 				if(trace.getType()==HitResult.Type.BLOCK){
 					BlockState blockState = level.getBlockState(trace.getBlockPos());
 					if(blockState.getMaterial()!=Material.AIR){// TODO BlockItemUseContext
@@ -201,17 +199,16 @@ public final class LightOverlayHandler{
 		}
 	}
 
+	@SuppressWarnings("deprecation")
 	@Nullable
 	private static LightValueEstimate getEstimatedLightValue(LocalPlayer player, InteractionHand hand, BlockHitResult hitResult){
 		ItemStack stack = player.getItemInHand(hand);
-		if(stack.isEmpty()||!(stack.getItem() instanceof BlockItem)) return null;
-		BlockItem item = (BlockItem)stack.getItem();
-		Block b = item.getBlock();
+		if(stack.isEmpty()||!(stack.getItem() instanceof BlockItem bi)) return null;
 		//noinspection ConstantConditions
-		if(b!=null){
+		if(bi.getBlock()!=null){
 			BlockPlaceContext ctx = new BlockPlaceContext(new UseOnContext(player, hand, hitResult));
 			if(ctx.canPlace()){
-				BlockState state = b.getStateForPlacement(ctx);
+				BlockState state = bi.getBlock().getStateForPlacement(ctx);
 				if(state!=null&&!state.hasBlockEntity()){
 					int lightValue = state.getLightEmission();
 					return lightValue>7 ? new LightValueEstimate(ctx, state.getLightEmission()) : null;

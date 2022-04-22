@@ -16,8 +16,8 @@ public abstract class GhostUtilsRenderType extends RenderType{
 			DefaultVertexFormat.POSITION_COLOR,
 			VertexFormat.Mode.LINES,
 			256,
-			false,//affectsCrumbling
-			true,//sortOnUpload
+			false,
+			true,
 			CompositeState.builder()
 					.setLineState(new LineStateShard(OptionalDouble.of(1.5)))
 					.setLayeringState(VIEW_OFFSET_Z_LAYERING)
