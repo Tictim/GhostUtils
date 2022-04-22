@@ -2,7 +2,6 @@ package tictim.ghostutils;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 
 import java.util.OptionalDouble;
@@ -17,13 +16,15 @@ public abstract class GhostUtilsRenderType extends RenderType{
 			VertexFormat.Mode.LINES,
 			256,
 			false,
-			true,
+			false,
 			CompositeState.builder()
+					.setShaderState(RENDERTYPE_LINES_SHADER)
 					.setLineState(new LineStateShard(OptionalDouble.of(1.5)))
 					.setLayeringState(VIEW_OFFSET_Z_LAYERING)
 					.setTransparencyState(TRANSLUCENT_TRANSPARENCY)
-					.setWriteMaskState(COLOR_WRITE)
-					.setShaderState(RenderStateShard.RENDERTYPE_LINES_SHADER)
+					.setOutputState(ITEM_ENTITY_TARGET)
+					.setWriteMaskState(COLOR_DEPTH_WRITE)
+					.setCullState(NO_CULL)
 					.createCompositeState(false));
 	public static final RenderType GHOSTUTILS_QUADS = RenderType.create("ghostutils_quads",
 			DefaultVertexFormat.POSITION_COLOR,
@@ -32,9 +33,9 @@ public abstract class GhostUtilsRenderType extends RenderType{
 			false,
 			true,
 			RenderType.CompositeState.builder()
+					.setShaderState(RENDERTYPE_LIGHTNING_SHADER)
 					.setLayeringState(VIEW_OFFSET_Z_LAYERING)
 					.setTransparencyState(TRANSLUCENT_TRANSPARENCY)
 					.setWriteMaskState(COLOR_WRITE)
-					.setShaderState(RenderStateShard.RENDERTYPE_LIGHTNING_SHADER)
 					.createCompositeState(false));
 }

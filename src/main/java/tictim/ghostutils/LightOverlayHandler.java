@@ -22,7 +22,6 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.NaturalSpawner;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Material;
@@ -34,7 +33,6 @@ import net.minecraftforge.client.event.RenderLevelLastEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nullable;
 import java.util.ArrayDeque;
@@ -83,7 +81,6 @@ public final class LightOverlayHandler{
 		Entity entity = Minecraft.getInstance().getCameraEntity();
 		if(entity==null) return;
 		RenderSystem.disableTexture();
-		GL11.glLineWidth(1.5f);
 
 		Vec3 projectedView = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
 		MultiBufferSource.BufferSource buffers = Minecraft.getInstance().renderBuffers().bufferSource();
@@ -124,7 +121,8 @@ public final class LightOverlayHandler{
 						default: // case NO_SPAWN:
 							continue;
 					}
-					final float dy = level.getBlockState(mpos)==Blocks.SNOW.defaultBlockState() ? y+(0.01f+(2/16f)) : y+0.01f;
+					float dy = y+0.015f;
+					if(level.getBlockState(mpos)==Blocks.SNOW.defaultBlockState()) dy += 2/16f;
 					buffer.vertex(matrix, x, dy, z).color(r, g, b, 1).endVertex();
 					buffer.vertex(matrix, x+1, dy, z+1).color(r, g, b, 1).endVertex();
 					buffer.vertex(matrix, x+1, dy, z).color(r, g, b, 1).endVertex();
@@ -136,6 +134,8 @@ public final class LightOverlayHandler{
 		buffers.endLastBatch();
 
 		renderLightingPredicate(level, poseStack, buffers);
+
+		buffers.endBatch();
 
 		poseStack.popPose();
 		RenderSystem.enableTexture();
@@ -156,7 +156,7 @@ public final class LightOverlayHandler{
 	private static boolean canCreatureTypeSpawnAtLocation(Level level, BlockPos pos){
 		if(!level.getWorldBorder().isWithinBounds(pos)) return false;
 		BlockPos down = pos.below();
-		if(level.getBlockState(down).isValidSpawn(level, down, SpawnPlacements.Type.ON_GROUND, EntityType.ZOMBIE)) {
+		if(level.getBlockState(down).isValidSpawn(level, down, SpawnPlacements.Type.ON_GROUND, EntityType.ZOMBIE)){
 			return NaturalSpawner.isValidEmptySpawnBlock(level, pos, level.getBlockState(pos), level.getFluidState(pos), EntityType.ZOMBIE);
 		}
 		return false;
@@ -189,7 +189,7 @@ public final class LightOverlayHandler{
 									buffer.vertex(matrix, x+1, y, z+1).color(0, 1, 0, alpha).endVertex();
 									buffer.vertex(matrix, x+1, y, z).color(0, 1, 0, alpha).endVertex();
 								}
-								buffers.endBatch();
+								buffers.endLastBatch();
 							}
 							RenderSystem.disableBlend();
 						}
