@@ -26,7 +26,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.client.gui.GuiUtils;
@@ -50,8 +49,7 @@ import java.util.stream.Stream;
 import static net.minecraft.ChatFormatting.*;
 import static tictim.ghostutils.GhostUtils.MODID;
 
-@OnlyIn(Dist.CLIENT)
-@Mod.EventBusSubscriber(modid = MODID)
+@Mod.EventBusSubscriber(modid = MODID, value = Dist.CLIENT)
 public final class ItemInfoHandler{
 	private ItemInfoHandler(){}
 
@@ -139,7 +137,7 @@ public final class ItemInfoHandler{
 	private static String latestText;
 
 	private static String getString(ItemStack stack){
-		if(latestStack==null||!ItemStack.isSame(stack, latestStack)){
+		if(latestStack==null||stack!=latestStack){
 			latestStack = stack.copy();
 			Item item = stack.getItem();
 			Block block = item instanceof BlockItem bi ? bi.getBlock() : null;
