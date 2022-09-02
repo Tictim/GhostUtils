@@ -77,7 +77,7 @@ public final class LightOverlayHandler{
 	@SubscribeEvent
 	public static void onTick(RenderLevelStageEvent event){
 		if(!lightOverlayEnabled) return;
-		if(event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRIPWIRE_BLOCKS) return;
+		if(event.getStage()!=RenderLevelStageEvent.Stage.AFTER_CUTOUT_BLOCKS) return;
 		Entity entity = Minecraft.getInstance().getCameraEntity();
 		if(entity==null) return;
 		RenderSystem.disableTexture();

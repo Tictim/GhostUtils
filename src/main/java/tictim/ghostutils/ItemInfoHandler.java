@@ -145,9 +145,9 @@ public final class ItemInfoHandler{
 			// Item name and its stack size
 			text.write(GOLD).write(stack.getCount()).rst().write(" x ").write(stack.getHoverName().getString());
 			// Item/Block ID
-			text.nl().write(GRAY).write("Item ID: ").write(item.getDescriptionId()).rst();
+			text.nl().write(GRAY).write("Item ID: ").write(ForgeRegistries.ITEMS.getKey(item)).rst();
 			if(block!=null)
-				text.nl().write(GRAY).write("Block ID: ").write(block.getDescriptionId()).rst();
+				text.nl().write(GRAY).write("Block ID: ").write(ForgeRegistries.BLOCKS.getKey(block)).rst();
 
 			if(stack.isDamageableItem()){
 				int maxDamage = stack.getMaxDamage(), damage = stack.getDamageValue();
