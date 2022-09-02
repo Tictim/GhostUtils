@@ -24,7 +24,6 @@ import net.minecraft.world.level.LightLayer;
 import net.minecraft.world.level.NaturalSpawner;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Material;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -56,7 +55,7 @@ public final class LightOverlayHandler{
 	private static final int Z_DIAMETER = 14*2;
 
 	private static final int NO_SPAWN = 0;
-	private static final int SPAWN_IN_NIGHT = 1;
+	private static final int SPAWN_ON_NIGHT = 1;
 	private static final int SPAWN = 2;
 	private static final int ZERO_LIGHT = 3;
 
@@ -103,7 +102,7 @@ public final class LightOverlayHandler{
 					mpos.setY(y);
 					float r, g, b;
 					switch(getSpawnMode(level)){
-						case SPAWN_IN_NIGHT:
+						case SPAWN_ON_NIGHT:
 							r = 1;
 							g = 1;
 							b = 0;
@@ -146,7 +145,7 @@ public final class LightOverlayHandler{
 		int light = level.getBrightness(LightLayer.BLOCK, mpos);
 		if(light>=8) return NO_SPAWN;
 		int sky = level.getBrightness(LightLayer.SKY, mpos);
-		if(sky>=8) return SPAWN_IN_NIGHT;
+		if(sky>=8) return SPAWN_ON_NIGHT;
 		else return Math.max(light, sky)==0 ? ZERO_LIGHT : SPAWN;
 	}
 
@@ -156,43 +155,38 @@ public final class LightOverlayHandler{
 	private static boolean canCreatureTypeSpawnAtLocation(Level level, BlockPos pos){
 		if(!level.getWorldBorder().isWithinBounds(pos)) return false;
 		BlockPos down = pos.below();
-		if(level.getBlockState(down).isValidSpawn(level, down, SpawnPlacements.Type.ON_GROUND, EntityType.ZOMBIE)){
-			return NaturalSpawner.isValidEmptySpawnBlock(level, pos, level.getBlockState(pos), level.getFluidState(pos), EntityType.ZOMBIE);
-		}
-		return false;
+		return level.getBlockState(down).isValidSpawn(level, down, SpawnPlacements.Type.ON_GROUND, EntityType.ZOMBIE)&&
+				NaturalSpawner.isValidEmptySpawnBlock(level, pos, level.getBlockState(pos), level.getFluidState(pos), EntityType.ZOMBIE);
 	}
 
 	/* @see Minecraft#rightClickMouse */
 	private static void renderLightingPredicate(Level level, PoseStack stack, MultiBufferSource.BufferSource buffers){
 		LocalPlayer player = Minecraft.getInstance().player;
 		if(player==null) return;
-		if(!player.isVehicle()&&Minecraft.getInstance().hitResult!=null){//isboat?
-			HitResult _t = Minecraft.getInstance().hitResult;
-			if(_t instanceof BlockHitResult trace){
-				if(trace.getType()==HitResult.Type.BLOCK){
-					BlockState blockState = level.getBlockState(trace.getBlockPos());
-					if(blockState.getMaterial()!=Material.AIR){// TODO BlockItemUseContext
-						LightValueEstimate light = LightValueEstimate.getBrighter(
-								getEstimatedLightValue(player, InteractionHand.MAIN_HAND, trace),
-								getEstimatedLightValue(player, InteractionHand.OFF_HAND, trace));
-						if(light!=null){
-							List<BlockPos> list = blockFinder.reset(level, light.ctx.getClickedPos(), light.brightness).run();
+		if(Minecraft.getInstance().hitResult instanceof BlockHitResult trace){
+			if(trace.getType()==HitResult.Type.BLOCK){
+				BlockState state = level.getBlockState(trace.getBlockPos());
+				if(!state.isAir()){
+					LightValueEstimate light = LightValueEstimate.getBrighter(
+							getEstimatedLightValue(player, InteractionHand.MAIN_HAND, trace),
+							getEstimatedLightValue(player, InteractionHand.OFF_HAND, trace));
+					if(light!=null){
+						List<BlockPos> list = blockFinder.reset(level, light.ctx.getClickedPos(), light.brightness).run();
 
-							float alpha = (float)((Math.sin((level.getGameTime()%40/40.0)*(2*Math.PI))/2+0.5)*0.25+0.25);
-							if(!list.isEmpty()){
-								Matrix4f matrix = stack.last().pose();
-								VertexConsumer buffer = buffers.getBuffer(GhostUtilsRenderType.GHOSTUTILS_QUADS);
-								for(BlockPos p : list){
-									float x = p.getX(), y = level.getBlockState(p)==Blocks.SNOW.defaultBlockState() ? p.getY()+(0.005f+2/16f) : p.getY()+(0.005f), z = p.getZ();
-									buffer.vertex(matrix, x, y, z).color(0, 1, 0, alpha).endVertex();
-									buffer.vertex(matrix, x, y, z+1).color(0, 1, 0, alpha).endVertex();
-									buffer.vertex(matrix, x+1, y, z+1).color(0, 1, 0, alpha).endVertex();
-									buffer.vertex(matrix, x+1, y, z).color(0, 1, 0, alpha).endVertex();
-								}
-								buffers.endLastBatch();
+						float alpha = (float)((Math.sin((level.getGameTime()%40/40.0)*(2*Math.PI))/2+0.5)*0.25+0.25);
+						if(!list.isEmpty()){
+							Matrix4f matrix = stack.last().pose();
+							VertexConsumer buffer = buffers.getBuffer(GhostUtilsRenderType.GHOSTUTILS_QUADS);
+							for(BlockPos p : list){
+								float x = p.getX(), y = level.getBlockState(p)==Blocks.SNOW.defaultBlockState() ? p.getY()+(0.005f+2/16f) : p.getY()+(0.005f), z = p.getZ();
+								buffer.vertex(matrix, x, y, z).color(0, 1, 0, alpha).endVertex();
+								buffer.vertex(matrix, x, y, z+1).color(0, 1, 0, alpha).endVertex();
+								buffer.vertex(matrix, x+1, y, z+1).color(0, 1, 0, alpha).endVertex();
+								buffer.vertex(matrix, x+1, y, z).color(0, 1, 0, alpha).endVertex();
 							}
-							RenderSystem.disableBlend();
+							buffers.endLastBatch();
 						}
+						RenderSystem.disableBlend();
 					}
 				}
 			}
@@ -218,15 +212,7 @@ public final class LightOverlayHandler{
 		return null;
 	}
 
-	private static final class LightValueEstimate{
-		public final BlockPlaceContext ctx;
-		public final int brightness;
-
-		public LightValueEstimate(BlockPlaceContext ctx, int brightness){
-			this.ctx = ctx;
-			this.brightness = brightness;
-		}
-
+	private record LightValueEstimate(BlockPlaceContext ctx, int brightness){
 		@Nullable
 		public static LightValueEstimate getBrighter(@Nullable LightValueEstimate light1, @Nullable LightValueEstimate light2){
 			return light1==null ? light2 :
