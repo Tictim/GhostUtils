@@ -30,10 +30,8 @@ minecraft {
     runs {
         client {
             workingDirectory project.file('run')
-
-            property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
-            property 'forge.enabledGameTestNamespaces', 'ghostutils'
+            ideaModule "${project.name}.main"
 
             mods {
                 ghostutils {
@@ -44,38 +42,8 @@ minecraft {
 
         server {
             workingDirectory project.file('run')
-
-            property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
-            property 'forge.enabledGameTestNamespaces', 'ghostutils'
-
-            mods {
-                ghostutils {
-                    source sourceSets.main
-                }
-            }
-        }
-
-        gameTestServer {
-            workingDirectory project.file('run')
-
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-            property 'forge.enabledGameTestNamespaces', 'ghostutils'
-
-            mods {
-                ghostutils {
-                    source sourceSets.main
-                }
-            }
-        }
-
-        data {
-            workingDirectory project.file('run')
-
-            property 'forge.logging.markers', 'REGISTRIES'
-            property 'forge.logging.console.level', 'debug'
-            args '--mod', 'ghostutils', '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+            ideaModule "${project.name}.main"
 
             mods {
                 ghostutils {
@@ -106,7 +74,7 @@ jar {
     }
 }
 
-//jar.finalizedBy('reobfJar')
+jar.finalizedBy('reobfJar')
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
