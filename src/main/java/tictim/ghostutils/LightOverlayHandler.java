@@ -29,7 +29,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLevelLastEvent;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -76,8 +76,9 @@ public final class LightOverlayHandler{
 	}
 
 	@SubscribeEvent
-	public static void onTick(RenderLevelLastEvent event){
+	public static void onTick(RenderLevelStageEvent event){
 		if(!lightOverlayEnabled) return;
+		if(event.getStage() != RenderLevelStageEvent.Stage.AFTER_TRIPWIRE_BLOCKS) return;
 		Entity entity = Minecraft.getInstance().getCameraEntity();
 		if(entity==null) return;
 		RenderSystem.disableTexture();
