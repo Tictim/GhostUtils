@@ -28,13 +28,12 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.client.event.ScreenEvent;
-import net.minecraftforge.client.gui.GuiUtils;
+import net.minecraftforge.client.gui.ScreenUtils;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.ForgeRegistryEntry;
 import net.minecraftforge.registries.IForgeRegistry;
 import net.minecraftforge.registries.tags.IReverseTag;
 import net.minecraftforge.registries.tags.ITagManager;
@@ -74,7 +73,7 @@ public final class ItemInfoHandler{
 	}
 
 	@SubscribeEvent(priority = EventPriority.LOWEST)
-	public static void guiRender(ScreenEvent.DrawScreenEvent.Post event){
+	public static void guiRender(ScreenEvent.Render.Post event){
 		if(!itemInfoEnabled||!(event.getScreen() instanceof AbstractContainerScreen gui)){
 			return;
 		}
@@ -108,7 +107,7 @@ public final class ItemInfoHandler{
 		poseStack.scale((float)((double)window.getGuiScaledWidth()/window.getWidth()*mag), (float)((double)window.getGuiScaledHeight()/window.getHeight()*mag), 1);
 		RenderSystem.setShaderColor(1, 1, 1, 1);
 
-		boolean fu = mc.options.forceUnicodeFont;
+		boolean fu = mc.options.forceUnicodeFont().get();
 		if(fu) mc.selectMainFont(false);
 
 		List<FormattedCharSequence> split = font.split(FormattedText.of(text), window.getWidth()/3);
@@ -116,8 +115,7 @@ public final class ItemInfoHandler{
 
 		int width = 0;
 		for(FormattedCharSequence s : split) width = Math.max(width, font.width(s));
-		GuiUtils.drawGradientRect(poseStack.last().pose(), 0, 0, 2, 4+width, 2+(split.size()+1)*font.lineHeight, 0x80000000, 0x80000000);
-
+		ScreenUtils.drawGradientRect(poseStack.last().pose(), 0, 0, 2, 4+width, 2+(split.size()+1)*font.lineHeight, 0x80000000, 0x80000000);
 		for(int i = 0; i<split.size(); i++){
 			font.draw(poseStack, split.get(i), 2, 2+i*font.lineHeight, -1);
 		}
@@ -147,9 +145,9 @@ public final class ItemInfoHandler{
 			// Item name and its stack size
 			text.write(GOLD).write(stack.getCount()).rst().write(" x ").write(stack.getHoverName().getString());
 			// Item/Block ID
-			text.nl().write(GRAY).write("Item ID: ").write(item.getRegistryName()).rst();
+			text.nl().write(GRAY).write("Item ID: ").write(item.getDescriptionId()).rst();
 			if(block!=null)
-				text.nl().write(GRAY).write("Block ID: ").write(block.getRegistryName()).rst();
+				text.nl().write(GRAY).write("Block ID: ").write(block.getDescriptionId()).rst();
 
 			if(stack.isDamageableItem()){
 				int maxDamage = stack.getMaxDamage(), damage = stack.getDamageValue();
@@ -185,11 +183,11 @@ public final class ItemInfoHandler{
 		return latestText;
 	}
 
-	private static <T extends ForgeRegistryEntry<T>> Stream<TagKey<T>> fucks(IForgeRegistry<T> registry, T entry){
+	private static <T> Stream<TagKey<T>> fucks(IForgeRegistry<T> registry, T entry){
 		ITagManager<T> tags = registry.tags();
 		if(tags==null) return Stream.empty();
 		Optional<IReverseTag<T>> reverseTag = tags.getReverseTag(entry);
-		if(!reverseTag.isPresent()) return Stream.empty();
+		if(reverseTag.isEmpty()) return Stream.empty();
 		return reverseTag.get().getTagKeys();
 	}
 
