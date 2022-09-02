@@ -17,13 +17,13 @@ apply plugin: 'maven-publish'
 
 version = "${mod_version}"
 group = "tictim.${mod_id}"
-archivesBaseName = "${mod_name}-1.18.2"
+archivesBaseName = "${mod_name}-1.16.5"
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+java.toolchain.languageVersion = JavaLanguageVersion.of(8)
 println "Java: ${System.getProperty 'java.version'}, JVM: ${System.getProperty 'java.vm.version'} (${System.getProperty 'java.vendor'}), Arch: ${System.getProperty 'os.arch'}"
 
 minecraft {
-    mappings channel: 'parchment', version: '2022.03.13-1.18.2'
+    mappings channel: 'parchment', version: '2021.10.17-1.16.5'
 
     accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
 
@@ -57,7 +57,7 @@ minecraft {
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
-    minecraft 'net.minecraftforge:forge:1.18.2-40.0.52'
+    minecraft 'net.minecraftforge:forge:1.16.5-36.2.39'
 }
 
 jar {

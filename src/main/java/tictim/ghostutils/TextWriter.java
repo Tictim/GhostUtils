@@ -1,6 +1,6 @@
 package tictim.ghostutils;
 
-import static net.minecraft.ChatFormatting.RESET;
+import static net.minecraft.util.text.TextFormatting.RESET;
 
 public final class TextWriter{
 	private final StringBuilder stb = new StringBuilder();
@@ -26,7 +26,7 @@ public final class TextWriter{
 
 	public TextWriter nl(){
 		write('\n');
-		for(int i=0; i<tabs; i++) write("  ");
+		for(int i = 0; i<tabs; i++) write("  ");
 		return this;
 	}
 
