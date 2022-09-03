@@ -1,39 +1,45 @@
 package tictim.ghostutils;
 
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.common.config.Config;
+import net.minecraftforge.common.config.ConfigManager;
+import net.minecraftforge.fml.client.event.ConfigChangedEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
-public final class Cfg{
-	private Cfg(){}
+import static tictim.ghostutils.GhostUtils.MODID;
 
-	private static ForgeConfigSpec.BooleanValue enableLightOverlay;
-	private static ForgeConfigSpec.BooleanValue enableItemInfo;
-	private static ForgeConfigSpec.DoubleValue itemInfoZoom;
-	private static ForgeConfigSpec.DoubleValue itemInfoZoomInSneak;
+@Mod.EventBusSubscriber(modid = MODID)
+@Config(modid = MODID, category = "")
+public class Cfg{
+	@SubscribeEvent
+	@SuppressWarnings("unused")
+	public static void onConfigChange(ConfigChangedEvent.OnConfigChangedEvent event){
+		if(event.getModID().equals(MODID))
+			ConfigManager.sync(MODID, Config.Type.INSTANCE);
+	}
+	public static final LightOverlay LightOverlay = new LightOverlay();
+	public static final ItemInfo ItemInfo = new ItemInfo();
 
 	public static boolean enableLightOverlay(){
-		return enableLightOverlay.get();
+		return LightOverlay.enableLightOverlay;
 	}
 	public static boolean enableItemInfo(){
-		return enableItemInfo.get();
+		return ItemInfo.enableItemInfo;
 	}
 	public static double itemInfoZoom(){
-		return itemInfoZoom.get();
+		return ItemInfo.itemInfoZoom;
 	}
 	public static double itemInfoZoomInSneak(){
-		return itemInfoZoomInSneak.get();
+		return ItemInfo.itemInfoZoomInSneak;
 	}
 
-	public static void init(){
-		ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
-		builder.push("LightOverlay");
-		enableLightOverlay = builder.define("enableLightOverlay", true);
-		builder.pop().push("ItemInfo");
-		enableItemInfo = builder.define("enableItemInfo", true);
-		itemInfoZoom = builder.defineInRange("itemInfoZoom", 1.0, Double.MIN_VALUE, Double.MAX_VALUE);
-		itemInfoZoomInSneak = builder.defineInRange("itemInfoZoomInSneak", 2.0, Double.MIN_VALUE, Double.MAX_VALUE);
-		builder.pop();
-		ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, builder.build(), "ghostutils.toml");
+	public static class LightOverlay{
+		public boolean enableLightOverlay = true;
+	}
+
+	public static class ItemInfo{
+		public boolean enableItemInfo = true;
+		public double itemInfoZoom = 1;
+		public double itemInfoZoomInSneak = 2;
 	}
 }

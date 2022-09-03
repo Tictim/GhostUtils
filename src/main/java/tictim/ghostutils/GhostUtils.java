@@ -1,32 +1,32 @@
 package tictim.ghostutils;
 
 import net.minecraft.client.settings.KeyBinding;
-import net.minecraft.client.util.InputMappings;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.client.settings.KeyModifier;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
+import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import org.lwjgl.glfw.GLFW;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.relauncher.Side;
+import org.lwjgl.input.Keyboard;
 
-import static tictim.ghostutils.GhostUtils.MODID;
-
-@Mod(MODID)
+@Mod(modid = GhostUtils.MODID,
+		name = GhostUtils.NAME,
+		version = GhostUtils.VERSION,
+		guiFactory = "tictim.ghostutils.GuiFactory")
 public class GhostUtils{
 	public static final String MODID = "ghostutils";
+	public static final String NAME = "Ghost Utilities";
+	public static final String VERSION = "1.0.3.0";
 
-	public GhostUtils(){
-		DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> Cfg::init);
+	@Mod.EventHandler
+	public void init(FMLInitializationEvent event){
+		if(FMLCommonHandler.instance().getSide()==Side.CLIENT){
+			ClientHandler.init();
+		}
 	}
 
-	@Mod.EventBusSubscriber(modid = MODID, bus = Bus.MOD, value = Dist.CLIENT)
-	public static final class ClientHandler{
-		private ClientHandler(){}
-
+	public static class ClientHandler{
 		private static KeyBinding toggleF7;
 		private static KeyBinding toggleItemInfo;
 
@@ -37,10 +37,9 @@ public class GhostUtils{
 			return toggleItemInfo;
 		}
 
-		@SubscribeEvent
-		public static void clientInit(FMLClientSetupEvent event){
-			toggleF7 = new KeyBinding("key.toggleLightOverlay", KeyConflictContext.IN_GAME, KeyModifier.NONE, InputMappings.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_F7), "key.categories.misc");
-			toggleItemInfo = new KeyBinding("key.toggleItemInfo", KeyConflictContext.GUI, KeyModifier.NONE, InputMappings.Type.KEYSYM.getOrCreate(GLFW.GLFW_KEY_F9), "key.categories.misc");
+		public static void init(){
+			toggleF7 = new KeyBinding("key.toggleLightOverlay", KeyConflictContext.IN_GAME, KeyModifier.NONE, Keyboard.KEY_F7, "key.categories.misc");
+			toggleItemInfo = new KeyBinding("key.toggleItemInfo", KeyConflictContext.GUI, KeyModifier.NONE, Keyboard.KEY_F9, "key.categories.misc");
 			ClientRegistry.registerKeyBinding(toggleF7);
 			ClientRegistry.registerKeyBinding(toggleItemInfo);
 		}

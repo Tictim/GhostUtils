@@ -8,9 +8,18 @@ buildscript {
 }
 apply plugin: 'net.minecraftforge.gradle.forge'
 
-version = "${mod_version}"
-group = "tictim.${mod_id}"
-archivesBaseName = "${mod_name}-1.12.2"
+// Fetch version from source because having to write version in two separate place is dumb
+version = getVersionFromSource()
+String getVersionFromSource(){
+    File file = file("src/main/java/tictim/ghostutils/GhostUtils.java")
+    String version = file.find { String s->
+        return s.contains("String VERSION")
+    }
+    return version.substring(version.indexOf('"')+1, version.lastIndexOf('"'))
+}
+
+group = "tictim.ghostutils"
+archivesBaseName = "GhostUtilities-1.12.2"
 
 sourceCompatibility = targetCompatibility = '1.8'
 

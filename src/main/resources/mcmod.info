@@ -1,0 +1,16 @@
+[
+{
+  "modid": "ghostutils",
+  "name": "Ghost Utilities",
+  "description": "",
+  "version": "${version}",
+  "mcversion": "${mcversion}",
+  "url": "",
+  "updateUrl": "",
+  "authorList": ["Tictim"],
+  "credits": "",
+  "logoFile": "",
+  "screenshots": [],
+  "dependencies": []
+}
+]
