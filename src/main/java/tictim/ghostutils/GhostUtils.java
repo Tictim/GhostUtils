@@ -13,7 +13,8 @@ import org.lwjgl.input.Keyboard;
 @Mod(modid = GhostUtils.MODID,
 		name = GhostUtils.NAME,
 		version = GhostUtils.VERSION,
-		guiFactory = "tictim.ghostutils.GuiFactory")
+		guiFactory = "tictim.ghostutils.GuiFactory",
+		clientSideOnly = true)
 public class GhostUtils{
 	public static final String MODID = "ghostutils";
 	public static final String NAME = "Ghost Utilities";
