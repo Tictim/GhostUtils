@@ -213,7 +213,7 @@ public final class ItemInfoHandler{
 				return;
 			}
 			case NBT.TAG_STRING:{
-				String str = nbt.toString();
+				String str = ((NBTTagString)nbt).getString();
 				Matcher matcher = RESOURCE_LOCATION_PATTERN.matcher(str);
 				if(matcher.matches()){
 					text.write(GREEN).write('"')
