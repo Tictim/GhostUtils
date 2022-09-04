@@ -29,8 +29,8 @@ public class Cfg{
 	public static double itemInfoZoom(){
 		return ItemInfo.zoom;
 	}
-	public static double itemInfoZoomInSneak(){
-		return ItemInfo.zoomInSneak;
+	public static double itemInfoZoomOnSneak(){
+		return ItemInfo.zoomOnSneak;
 	}
 	public static boolean itemInfoTest(){
 		return ItemInfo.test;
@@ -43,7 +43,7 @@ public class Cfg{
 	public static class ItemInfo{
 		public boolean enable = true;
 		public double zoom = 1;
-		public double zoomInSneak = 2;
+		public double zoomOnSneak = 2;
 		public boolean test = false;
 	}
 }

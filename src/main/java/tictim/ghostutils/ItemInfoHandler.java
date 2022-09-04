@@ -97,7 +97,7 @@ public final class ItemInfoHandler{
 		GlStateManager.translate(0, 0, 1);
 		GuiContainer.isShiftKeyDown();
 		double mag = Keyboard.isKeyDown(mc.gameSettings.keyBindSneak.getKeyCode()) ?
-				Cfg.itemInfoZoomInSneak() :
+				Cfg.itemInfoZoomOnSneak() :
 				Cfg.itemInfoZoom();
 		GlStateManager.scale(mag/window.getScaleFactor(), mag/window.getScaleFactor(), 1);
 		GlStateManager.color(1, 1, 1, 1);
