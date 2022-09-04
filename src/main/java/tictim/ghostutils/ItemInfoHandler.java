@@ -105,7 +105,7 @@ public final class ItemInfoHandler{
 		boolean fu = mc.gameSettings.forceUnicodeFont;
 		if(fu) font.setUnicodeFlag(false);
 
-		List<String> split = font.listFormattedStringToWidth(text, window.getScaledWidth()/3);
+		List<String> split = font.listFormattedStringToWidth(text, window.getScaledWidth()*window.getScaleFactor()/3);
 		GlStateManager.translate(0, font.FONT_HEIGHT-maxScroll(window, font, split.size(), mag)*scroll/(double)gui.height, 400);
 
 		int width = 0;
