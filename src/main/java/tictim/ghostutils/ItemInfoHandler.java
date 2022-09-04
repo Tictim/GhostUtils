@@ -26,12 +26,12 @@ import net.minecraftforge.fml.client.config.GuiUtils;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.oredict.OreDictionary;
 import org.lwjgl.input.Keyboard;
 
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -49,15 +49,16 @@ public final class ItemInfoHandler{
 	private static boolean itemInfoEnabled;
 
 	@SubscribeEvent
-	public static void onTick(TickEvent.ClientTickEvent event){
-		if(event.phase==TickEvent.Phase.START){
-			if(Cfg.enableItemInfo()){
-				KeyBinding key = GhostUtils.ClientHandler.getToggleItemInfo();
-				if(key.getKeyConflictContext().isActive()&&key.isPressed()){
+	public static void beforeKeyboardInput(GuiScreenEvent.KeyboardInputEvent.Post event){
+		if(Cfg.enableItemInfo()){
+			if(Keyboard.getEventKeyState()){
+				KeyBinding itemInfo = GhostUtils.ClientHandler.getToggleItemInfo();
+				if(itemInfo.isActiveAndMatches(Keyboard.getEventKey())){
 					itemInfoEnabled = !itemInfoEnabled;
+					event.setCanceled(true);
 				}
-			}else itemInfoEnabled = false;
-		}
+			}
+		}else itemInfoEnabled = false;
 	}
 
 	@SubscribeEvent
@@ -72,7 +73,7 @@ public final class ItemInfoHandler{
 		if(debugMode()){
 			draw(gui, getDebugText(), event.getMouseY());
 		}else if(gui.mc.player!=null){
-			ItemStack stack = gui.mc.player.inventory.getCurrentItem();
+			ItemStack stack = gui.mc.player.inventory.getItemStack();
 			if(stack.isEmpty()){
 				Slot slotSelected = gui.getSlotUnderMouse();
 				if(slotSelected!=null) stack = slotSelected.getStack();
@@ -91,13 +92,14 @@ public final class ItemInfoHandler{
 
 		GlStateManager.disableDepth();
 		GlStateManager.disableBlend();
+		GlStateManager.disableLighting();
 		GlStateManager.pushMatrix();
 		GlStateManager.translate(0, 0, 1);
 		GuiContainer.isShiftKeyDown();
 		double mag = Keyboard.isKeyDown(mc.gameSettings.keyBindSneak.getKeyCode()) ?
 				Cfg.itemInfoZoomInSneak() :
 				Cfg.itemInfoZoom();
-		GlStateManager.translate((float)((double)window.getScaleFactor()*mag), (float)((double)window.getScaleFactor()*mag), 1);
+		GlStateManager.scale(mag/window.getScaleFactor(), mag/window.getScaleFactor(), 1);
 		GlStateManager.color(1, 1, 1, 1);
 
 		boolean fu = mc.gameSettings.forceUnicodeFont;
@@ -119,6 +121,7 @@ public final class ItemInfoHandler{
 		GlStateManager.popMatrix();
 		GlStateManager.enableDepth();
 		GlStateManager.enableBlend();
+		GlStateManager.enableLighting();
 	}
 
 	private static int maxScroll(ScaledResolution window, FontRenderer font, int lines, double mag){
@@ -158,7 +161,10 @@ public final class ItemInfoHandler{
 			int[] oreIDs = OreDictionary.getOreIDs(stack);
 			if(oreIDs.length>0){
 				text.nl().nl().write(YELLOW).write(BOLD).write("Ore Dictionary:").rst();
-				for(int oreID : oreIDs) text.nl().write(" - ").write(OreDictionary.getOreName(oreID));
+				Arrays.stream(oreIDs)
+						.mapToObj(OreDictionary::getOreName)
+						.sorted()
+						.forEach(s -> text.nl().write(" - ").write(s));
 			}
 			NBTTagCompound nbt = stack.getTagCompound();
 			if(nbt!=null){
