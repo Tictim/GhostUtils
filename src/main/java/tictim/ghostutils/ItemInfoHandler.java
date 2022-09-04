@@ -102,7 +102,7 @@ public final class ItemInfoHandler{
 		poseStack.pushPose();
 		poseStack.translate(0, 0, 1);
 		double mag = InputConstants.isKeyDown(window.getWindow(), mc.options.keyShift.getKey().getValue()) ?
-				Cfg.itemInfoZoomInSneak() :
+				Cfg.itemInfoZoomOnSneak() :
 				Cfg.itemInfoZoom();
 		poseStack.scale((float)((double)window.getGuiScaledWidth()/window.getWidth()*mag), (float)((double)window.getGuiScaledHeight()/window.getHeight()*mag), 1);
 		RenderSystem.setShaderColor(1, 1, 1, 1);
