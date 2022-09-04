@@ -21,25 +21,29 @@ public class Cfg{
 	public static final ItemInfo ItemInfo = new ItemInfo();
 
 	public static boolean enableLightOverlay(){
-		return LightOverlay.enableLightOverlay;
+		return LightOverlay.enable;
 	}
 	public static boolean enableItemInfo(){
-		return ItemInfo.enableItemInfo;
+		return ItemInfo.enable;
 	}
 	public static double itemInfoZoom(){
-		return ItemInfo.itemInfoZoom;
+		return ItemInfo.zoom;
 	}
 	public static double itemInfoZoomInSneak(){
-		return ItemInfo.itemInfoZoomInSneak;
+		return ItemInfo.zoomInSneak;
+	}
+	public static boolean itemInfoTest(){
+		return ItemInfo.test;
 	}
 
 	public static class LightOverlay{
-		public boolean enableLightOverlay = true;
+		public boolean enable = true;
 	}
 
 	public static class ItemInfo{
-		public boolean enableItemInfo = true;
-		public double itemInfoZoom = 1;
-		public double itemInfoZoomInSneak = 2;
+		public boolean enable = true;
+		public double zoom = 1;
+		public double zoomInSneak = 2;
+		public boolean test = false;
 	}
 }

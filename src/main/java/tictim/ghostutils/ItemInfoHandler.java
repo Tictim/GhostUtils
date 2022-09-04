@@ -70,7 +70,7 @@ public final class ItemInfoHandler{
 	public static void guiRender(GuiScreenEvent.DrawScreenEvent.Post event){
 		if(!itemInfoEnabled||!(event.getGui() instanceof GuiContainer)) return;
 		GuiContainer gui = (GuiContainer)event.getGui();
-		if(debugMode()){
+		if(Cfg.itemInfoTest()){
 			draw(gui, getDebugText(), event.getMouseY());
 		}else if(gui.mc.player!=null){
 			ItemStack stack = gui.mc.player.inventory.getItemStack();
@@ -287,10 +287,6 @@ public final class ItemInfoHandler{
 			default:
 				text.write("(Unknown NBT Data)");
 		}
-	}
-
-	private static boolean debugMode(){
-		return false;
 	}
 
 	@Nullable private static String debugText;
