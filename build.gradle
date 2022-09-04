@@ -19,7 +19,7 @@ String getVersionFromSource(){
 }
 
 group = "tictim.ghostutils"
-archivesBaseName = "GhostUtilities-1.12.2"
+archivesBaseName = "GhostUtils-1.12.2"
 
 sourceCompatibility = targetCompatibility = '1.8'
 
