@@ -2,14 +2,14 @@
 {
   "modid": "ghostutils",
   "name": "Ghost Utilities",
-  "description": "",
+  "description": "Client-sided useful overlays",
   "version": "${version}",
   "mcversion": "${mcversion}",
-  "url": "",
+  "url": "https://www.curseforge.com/minecraft/mc-mods/ghostutilities",
   "updateUrl": "",
   "authorList": ["Tictim"],
   "credits": "",
-  "logoFile": "",
+  "logoFile": "ghostutils_logo.png",
   "screenshots": [],
   "dependencies": []
 }
