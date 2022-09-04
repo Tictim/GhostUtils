@@ -79,7 +79,7 @@ public final class ItemInfoHandler{
 			return;
 		}
 		PoseStack poseStack = event.getPoseStack();
-		if(debugMode()){
+		if(Cfg.itemInfoTest()){
 			draw(poseStack, gui, getDebugText(), event.getMouseY());
 		}else if(gui.getMinecraft().player!=null){
 			ItemStack stack = gui.getMenu().getCarried();
@@ -103,7 +103,7 @@ public final class ItemInfoHandler{
 		poseStack.pushPose();
 		poseStack.translate(0, 0, 1);
 		double mag = InputConstants.isKeyDown(window.getWindow(), mc.options.keyShift.getKey().getValue()) ?
-				Cfg.itemInfoZoomInSneak() :
+				Cfg.itemInfoZoomOnSneak() :
 				Cfg.itemInfoZoom();
 		poseStack.scale((float)((double)window.getGuiScaledWidth()/window.getWidth()*mag), (float)((double)window.getGuiScaledHeight()/window.getHeight()*mag), 1);
 		RenderSystem.setShaderColor(1, 1, 1, 1);
@@ -283,10 +283,6 @@ public final class ItemInfoHandler{
 			}
 			default -> text.write("(Unknown NBT Data)");
 		}
-	}
-
-	private static boolean debugMode(){
-		return false;
 	}
 
 	@Nullable private static String debugText;
