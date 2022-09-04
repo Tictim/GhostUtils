@@ -2,10 +2,11 @@ modLoader="javafml"
 loaderVersion="[40,)"
 license="GNU Lesser General Public License v2.1 (LGPLv2.1)"
 
-[[mods]] #mandatory
+[[mods]]
 modId="ghostutils"
 version="${file.jarVersion}"
 displayName="Ghost Utilities"
 displayURL="https://www.curseforge.com/minecraft/mc-mods/ghostutilities"
 logoFile="ghostutils_logo.png"
-description=''''''
+authors="Tictim"
+description='''Client-sided useful overlays'''
