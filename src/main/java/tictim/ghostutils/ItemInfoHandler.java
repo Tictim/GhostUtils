@@ -170,6 +170,7 @@ public final class ItemInfoHandler{
 			if(item instanceof BlockItem){
 				List<INamedTag<Block>> blockTags = tags(BlockTags.getWrappers(), ((BlockItem)item).getBlock());
 				if(!blockTags.isEmpty()){
+					if(itemTags.isEmpty()) text.nl();
 					text.nl().write(YELLOW).write(BOLD).write("Block Tags:").rst();
 					for(INamedTag<Block> tag : blockTags) text.nl().write(" - ").write(tag.getName());
 				}
