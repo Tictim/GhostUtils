@@ -37,7 +37,7 @@ public final class Cfg{
 		enableItemInfo = builder.define("enable", true);
 		itemInfoZoom = builder.defineInRange("zoom", 1.0, Double.MIN_VALUE, Double.MAX_VALUE);
 		itemInfoZoomOnSneak = builder.defineInRange("zoomOnSneak", 2.0, Double.MIN_VALUE, Double.MAX_VALUE);
-		itemInfoTest = builder.define("test", true);
+		itemInfoTest = builder.define("test", false);
 		builder.pop();
 		ModLoadingContext.get().registerConfig(ModConfig.Type.CLIENT, builder.build(), "ghostutils.toml");
 	}
