@@ -76,7 +76,7 @@ public final class ItemInfoHandler{
 		if(!itemInfoEnabled||!(event.getGui() instanceof ContainerScreen<?>)) return;
 		ContainerScreen<?> gui = (ContainerScreen<?>)event.getGui();
 		MatrixStack mat = event.getMatrixStack();
-		if(debugMode()){
+		if(Cfg.itemInfoTest()){
 			draw(mat, gui, getDebugText(), event.getMouseY());
 		}else if(gui.getMinecraft().player!=null){
 			ItemStack stack = gui.getMinecraft().player.inventory.getCarried();
@@ -101,7 +101,7 @@ public final class ItemInfoHandler{
 		mat.pushPose();
 		mat.translate(0, 0, 1);
 		double mag = InputMappings.isKeyDown(window.getWindow(), mc.options.keyShift.getKey().getValue()) ?
-				Cfg.itemInfoZoomInSneak() :
+				Cfg.itemInfoZoomOnSneak() :
 				Cfg.itemInfoZoom();
 		mat.scale((float)((double)window.getGuiScaledWidth()/window.getWidth()*mag), (float)((double)window.getGuiScaledHeight()/window.getHeight()*mag), 1);
 		//noinspection deprecation
@@ -300,10 +300,6 @@ public final class ItemInfoHandler{
 			default:
 				text.write("(Unknown NBT Data)");
 		}
-	}
-
-	private static boolean debugMode(){
-		return false;
 	}
 
 	@Nullable private static String debugText;
