@@ -49,3 +49,11 @@ processResources {
     }
     rename '(.+_at.cfg)', 'META-INF/$1' // Access Transformers
 }
+
+jar {
+    manifest {
+        def attribute_map = [:]
+        attribute_map['FMLAT'] = 'ghostutils_at.cfg'
+        attributes(attribute_map)
+    }
+}
