@@ -18,7 +18,7 @@ import org.lwjgl.input.Keyboard;
 public class GhostUtils{
 	public static final String MODID = "ghostutils";
 	public static final String NAME = "Ghost Utilities";
-	public static final String VERSION = "1.0.3.1";
+	public static final String VERSION = "1.0.3.2";
 
 	@Mod.EventHandler
 	public void init(FMLInitializationEvent event){
